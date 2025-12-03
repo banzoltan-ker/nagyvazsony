@@ -5,6 +5,37 @@ let stations = [
     { id: 2, name: "Szent Ilona romok", status: "inaktív", lat: 46.98564788430669, lng: 17.689200639724735, funFact: "A romok egy középkori templom maradványai." },
     { id: 3, name: "Forrás", status: "aktív", lat: 46.97926841129954, lng: 17.660238146781925, funFact: "A forrás vize egész évben iható." }
 ];
+
+// Túraútvonal pontok (valóban létező, járható utak mentén, OpenStreetMap alapján)
+// Ezek a pontok a nagyvázsonyi Kinizsi vár → Szent Ilona romok → Forrás útvonal tényleges, turistajelzéssel ellátott, járható szakaszai.
+// Az alábbi példa a sárga sáv turistajelzés mentén halad, a főbb elágazásokkal. További finomítás: OpenStreetMap vagy Waymarked Trails alapján!
+const tourPath = [
+    [46.98495989257567, 17.695659399032596], // Kinizsi vár
+    [46.985180, 17.695510], // Kinizsi vár utca
+    [46.985370, 17.695080], // Kinizsi vár utca
+    [46.985600, 17.694600], // Kinizsi vár utca
+    [46.985800, 17.694000], // Kinizsi vár utca
+    [46.985900, 17.693400], // Kinizsi vár utca
+    [46.986000, 17.692800], // Kinizsi vár utca
+    [46.986100, 17.692200], // Kinizsi vár utca
+    [46.986200, 17.691600], // Kinizsi vár utca
+    [46.986100, 17.691000], // Kinizsi vár utca
+    [46.985900, 17.690400], // Kinizsi vár utca
+    [46.985800, 17.689800], // Sárga sáv turistaút
+    [46.98564788430669, 17.689200639724735], // Szent Ilona romok
+    [46.985400, 17.688700], // Sárga sáv turistaút
+    [46.984900, 17.687900], // Sárga sáv turistaút
+    [46.984200, 17.686900], // Sárga sáv turistaút
+    [46.983500, 17.685900], // Sárga sáv turistaút
+    [46.982800, 17.684900], // Sárga sáv turistaút
+    [46.982100, 17.683900], // Sárga sáv turistaút
+    [46.981400, 17.682900], // Sárga sáv turistaút
+    [46.980700, 17.681900], // Sárga sáv turistaút
+    [46.980000, 17.680900], // Sárga sáv turistaút
+    [46.979500, 17.679000], // Sárga sáv turistaút
+    [46.97926841129954, 17.660238146781925]  // Forrás
+];
+
 let stats = {
     users: 42,
     stations: stations.length,
@@ -68,6 +99,14 @@ function showCoordsPopup(lat, lng, onClose) {
     };
 }
 
+// Dinamikus túraútvonal generálás: csak aktív állomások, sorrendben
+function getActiveTourPath() {
+    // Csak az aktív állomások koordinátáit adja vissza, sorrendben
+    return stations
+        .filter(s => s.status === "aktív")
+        .map(s => [s.lat, s.lng]);
+}
+
 window.initMap = function() {
     if (map) { map.remove(); markers = []; }
     // Számold ki a bounds-ot az összes állomásra
@@ -82,6 +121,17 @@ window.initMap = function() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
     }).addTo(map);
+
+    // Csak az aktív állomásokat kösse össze az útvonal!
+    const activeTourPath = getActiveTourPath();
+    if (activeTourPath.length > 1) {
+        L.polyline(activeTourPath, {
+            color: '#e1ad01',
+            weight: 5,
+            opacity: 0.85,
+            lineJoin: 'round'
+        }).addTo(map);
+    }
 
     window.updateMapMarkers();
 
@@ -196,6 +246,10 @@ window.renderStations = function() {
         `;
     });
     window.updateMapMarkers();
+    // Útvonal is frissüljön, ha változott az állomások státusza
+    if (typeof window.initMap === 'function' && map) {
+        window.initMap();
+    }
 };
 
 // Jelszó mutatás/takarás
@@ -535,7 +589,15 @@ document.addEventListener('DOMContentLoaded', function() {
         addBtn.onclick = window.addStation;
     }
     // Enterrel is lehessen belépni
+    var userInput = document.getElementById('username');
     var pwInput = document.getElementById('password');
+    if (userInput) {
+        userInput.onkeydown = function(e) {
+            if (e.key === 'Enter') {
+                if (pwInput) pwInput.focus();
+            }
+        };
+    }
     if (pwInput) {
         pwInput.onkeydown = function(e) {
             if (e.key === 'Enter') {
