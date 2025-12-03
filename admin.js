@@ -1,9 +1,9 @@
 // Dummy adatok, cseréld le backend API hívásokra!
 const adminUser = { username: "admin", password: "admin123" };
 let stations = [
-    { id: 1, name: "Kinizsi vár", status: "aktív", lat: 47.02513, lng: 17.64998, funFact: "A várat Kinizsi Pál építtette a 15. században." },
-    { id: 2, name: "Szent Ilona romok", status: "inaktív", lat: 47.02780, lng: 17.65420, funFact: "A romok egy középkori templom maradványai." },
-    { id: 3, name: "Forrás", status: "aktív", lat: 47.03010, lng: 17.65250, funFact: "A forrás vize egész évben iható." }
+    { id: 1, name: "Kinizsi vár", status: "aktív", lat: 46.98495989257567, lng: 17.695659399032596, funFact: "A várat Kinizsi Pál építtette a 15. században." },
+    { id: 2, name: "Szent Ilona romok", status: "inaktív", lat: 46.98564788430669, lng: 17.689200639724735, funFact: "A romok egy középkori templom maradványai." },
+    { id: 3, name: "Forrás", status: "aktív", lat: 46.97926841129954, lng: 17.660238146781925, funFact: "A forrás vize egész évben iható." }
 ];
 let stats = {
     users: 42,
@@ -70,7 +70,15 @@ function showCoordsPopup(lat, lng, onClose) {
 
 window.initMap = function() {
     if (map) { map.remove(); markers = []; }
-    map = L.map('map').setView([47.026, 17.652], 14);
+    // Számold ki a bounds-ot az összes állomásra
+    if (stations.length > 0) {
+        const latlngs = stations.map(s => [s.lat, s.lng]);
+        const bounds = L.latLngBounds(latlngs);
+        map = L.map('map');
+        map.fitBounds(bounds, { padding: [30, 30] });
+    } else {
+        map = L.map('map').setView([47.026, 17.652], 14);
+    }
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
     }).addTo(map);
@@ -205,11 +213,11 @@ window.showCoords = function(stationId) {
     const station = stations.find(s => s.id === stationId);
     if (!station || !map) return;
     // Zoom and pan to the station's coordinates on the map
-    map.setView([station.lat, station.lng], 17, { animate: true });
+    map.setView([station.lat, station.lng], 18, { animate: true });
     // Optionally, open the marker's popup if exists
     const marker = markers.find(m => {
         const pos = m.getLatLng && m.getLatLng();
-        return pos && pos.lat === station.lat && pos.lng === station.lng;
+        return pos && Math.abs(pos.lat - station.lat) < 0.0001 && Math.abs(pos.lng - station.lng) < 0.0001;
     });
     if (marker && marker.openPopup) {
         marker.openPopup();
